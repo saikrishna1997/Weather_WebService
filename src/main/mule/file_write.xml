@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	<file:config name="File_Config" doc:name="File Config" doc:id="1934b265-0d97-4726-bacd-e51f52bc683b" >
+		<file:connection workingDir="C:\Users\Saikrishna\Desktop\Use Cases" />
+	</file:config>
+	<flow name="file_writeFlow" doc:id="e9c96e44-1474-4677-be92-213a84756837" >
+		<scheduler doc:name="Scheduler" doc:id="5d1d48b9-be4c-4676-897c-38d3b612c259" >
+			<scheduling-strategy >
+				<cron expression="0 45 10 08 * ?" timeZone="Asia/Kolkata"/>
+			</scheduling-strategy>
+		</scheduler>
+		<db:select doc:name="Select the Data from Database" doc:id="80781c2a-2204-48b6-9cd8-256af449fa8b" config-ref="Database_Config4">
+			<db:sql >select location,latitude,longitude,temperature,date,time from location;</db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="465e1f1e-862e-46fb-80f2-3b83d5cf083b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xlsx
+---
+{
+	location: payload map ( payload01 , indexOfPayload01 ) -> {
+		location: payload01.location,
+		latitude: payload01.latitude,
+		longitude: payload01.longitude,
+		temperature: payload01.temperature,
+		date: payload01.date,
+		time: payload01.time
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<file:write doc:id="8449878b-3fee-4e04-9b3c-dfda0a976f04" config-ref="File_Config" path="C:\Users\Saikrishna\Desktop\location.xlsx" doc:name="Write the Data in File"/>
+		<logger level="INFO" doc:name="Logger" doc:id="dfa9c816-5ddc-4649-9eca-999642288f1a" message="Successfully Added!!!"/>
+	</flow>
+</mule>

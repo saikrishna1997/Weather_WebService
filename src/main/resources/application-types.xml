@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="location" format="excel">
+      <types:shape format="weave"><![CDATA[%dw 2.0
+
+type location = {|
+  location?: Array<{|    location: String,     latitude: Number,     longitude: Number,     temperature: Number,     date: String,     time: String  |}>
+|}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#465e1f1e-862e-46fb-80f2-3b83d5cf083b">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="location"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

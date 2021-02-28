@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="totalrequestFlow" doc:id="abb38c88-9124-4794-98eb-41eaaaca53d0" >
+		<http:listener doc:name="Listener" doc:id="07bc4679-b159-42ca-81c4-387d8ea2751b" config-ref="HTTP_Listener_config1" path="/request"/>
+		<db:select doc:name="Read Data" doc:id="b4c0527a-3763-4076-b850-8ba49fa0b1e1" config-ref="Database_Config4">
+			<db:sql >select * from location;</db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="049ae3f9-28b2-4d4b-a135-a61464d84d61" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	WeatherResponses: payload map((value,index)->{
+		
+		WeatherResponse:value
+		
+		
+	})
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Total Requests" doc:id="bb17756a-eb17-4405-94ad-d43fe90d79af" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+WeatherResponse:payload.WeatherResponses.*WeatherResponse groupBy $.location pluck $ map(item,index)-> {
+	LocationName:item.location[0],
+	TotalRequest:sizeOf(item)
+	
+}distinctBy $]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

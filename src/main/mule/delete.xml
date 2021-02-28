@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<flow name="deleteFlow" doc:id="02a1aa9d-980f-48a3-8518-f5f55cd4e636" >
+		<scheduler doc:name="Scheduler " doc:id="51ff9968-d92f-480e-a39b-09527f63035c" >
+			<scheduling-strategy >
+				<cron timeZone="Asia/Kolkata" expression="0 55 10 07 * ?"/>
+			</scheduling-strategy>
+		</scheduler>
+		<db:delete doc:name="Delete the Records" doc:id="b883dd7b-4ea8-49aa-a222-8dfe6485a7b7" config-ref="Database_Config4">
+			<db:sql >delete from location where date &lt; now() - interval 30 DAY;</db:sql>
+		</db:delete>
+		<logger level="INFO" doc:name="Logger" doc:id="f1669332-16ad-4816-bfb7-8fdb1d9e84bd" message="Deleted!!!"/>
+	</flow>
+</mule>

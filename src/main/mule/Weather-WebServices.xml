@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<http:listener-config name="HTTP_Listener_config"
+		doc:name="HTTP Listener config"
+		doc:id="872756c5-60e2-4c52-adc7-4c65675d17e1">
+		<http:listener-connection host="0.0.0.0"
+			port="8081" />
+	</http:listener-config>
+	<http:request-config
+		name="HTTP_Request_configuration"
+		doc:name="HTTP Request configuration"
+		doc:id="396a84b4-6743-4491-9fb2-fffd895d0918"
+		basePath="/geocode/v1/json?key=a2e7016c35ca425293214a19ec049d9b&amp;pretty=1&amp;q=">
+		<http:request-connection
+			host="api.opencagedata.com" protocol="HTTPS" />
+	</http:request-config>
+	<http:request-config
+		name="HTTP_Request_configuration1"
+		doc:name="HTTP Request configuration"
+		doc:id="41ec9083-25a3-4e7d-8727-1c735feffbe6"
+		basePath="/forecast/85ade34ec6e5d516898cb914651b544e/">
+		<http:request-connection
+			host="api.darksky.net" protocol="HTTPS" />
+	</http:request-config>
+	<db:config name="Database_Config" doc:name="Database Config"
+		doc:id="23288c78-5413-4294-b42f-eaba9e95a000">
+		<db:my-sql-connection host="localhost"
+			port="3306" user="root" password="1234" database="mule" />
+	</db:config>
+	<db:config name="Database_Config1" doc:name="Database Config"
+		doc:id="e8fb2963-fd32-4728-b3d1-4055b4d83b71">
+		<db:my-sql-connection host="localhost"
+			port="3306" user="root" password="1234" database="mule" />
+	</db:config>
+	<db:config name="Database_Config2" doc:name="Database Config"
+		doc:id="a56510bb-3a23-432c-b805-55c78b20ee30">
+		<db:my-sql-connection host="localhost"
+			port="3306" user="root" password="1234" database="mule" />
+	</db:config>
+	<db:config name="Database_Config3" doc:name="Database Config"
+		doc:id="43ce85d1-2567-4c2a-94e3-af9e77da3335">
+		<db:my-sql-connection host="localhost"
+			port="3306" user="root" password="1234" database="mule" />
+	</db:config>
+	<flow name="usecaseFlow"
+		doc:id="c3136734-d2ab-44ba-a58a-6e887de638d4">
+		<http:listener doc:name="GET /Weather"
+			doc:id="c9bc21b9-d55a-4a3f-b3b1-25d6dd175c95"
+			config-ref="HTTP_Listener_config1" path="/location" />
+		<set-variable
+			value="#[message.attributes.queryParams.weather]"
+			doc:name="Set weather Variable"
+			doc:id="0b8be9ce-ca57-41a8-b965-e2eb724eb976" variableName="weather" />
+		<ee:transform doc:name="Location Request"
+			doc:id="31ee3c6a-cb85-4b2b-9aa4-c3798098ff1e">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+---
+Data : payload.WeatherRequest.Location.Name as String
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[payload]"
+			doc:name="Set Location Variable"
+			doc:id="ccdff23d-3642-46b4-a8ee-82fd198be8fa"
+			variableName="LocationName" />
+		<http:request method="GET"
+			doc:name="Location Query Request"
+			doc:id="0f8e5206-4644-491f-9a01-90e600d11b9c"
+			config-ref="HTTP_Request_configuration" path="#[payload.Data]" />
+		<ee:transform doc:name="Latitude and Longitude Response"
+			doc:id="4e6b3df2-cd42-4528-9a8f-7caac8a1b5dd">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	WeatherResponse:{
+		Latitude:payload.results.geometry.lat,
+		Longitude:payload.results.geometry.lng,
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Latitude and Longitude Concatenate"
+			doc:id="03f3a300-e402-453c-8855-9514085183ea">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+
+	{
+		weatherData:payload.WeatherResponse.Latitude[0] ++ ',' ++ payload.WeatherResponse.Longitude[0] 
+	}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="GET" doc:name="Weather Request"
+			doc:id="d0032814-65f5-4269-9711-0fc1a91acda1"
+			config-ref="HTTP_Request_configuration1"
+			path="#[payload.weatherData]" />
+		<ee:transform doc:name="Transform Message" doc:id="4da7be99-5401-4937-938f-76626e5e6bda" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	WeatherResponse:{
+		Location:vars.LocationName.Data,
+		Latitude:payload.latitude,
+		Longitude:payload.longitude,
+		Temperature:payload.currently.temperature,
+	    Date:now()  as String {format : "d-MM-yyyy "},
+		Time:now()  as String {format : "H:mm:ss a"},
+		Icon:payload.currently.icon,
+	//	humidity:payload.currently.humidity
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="Choice"
+			doc:id="f1b40013-04b4-4e16-afa7-20b3f3cbbdad">
+			<when expression='#[vars.weather == "Insert"]'>
+				<flow-ref doc:name="Insert Weather"
+					doc:id="0162b4de-8af4-4316-b9bf-f166d11058ca" name="Insert" />
+			</when>
+			<when expression='#[vars.weather == "getdetails"]'>
+				<flow-ref doc:name="GetWeather"
+					doc:id="03beacc3-3d09-4da7-afce-c54f10de3fb4" name="getdetails" />
+			</when>
+			<when expression="#[vars.weather == 'Read']">
+				<flow-ref doc:name="Read Weather" doc:id="c9453955-6796-4acd-848a-5c17ac857969" name="Read"/>
+			</when>
+			<otherwise>
+				<flow-ref doc:name="Default"
+					doc:id="cac0d1e7-68d0-41cf-901e-d7da03b7bcbb" name="Default" />
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="getdetails"
+		doc:id="e2469999-d7f7-40af-a092-bbef9196b3dc">
+		<ee:transform doc:name="Get Weather Details"
+			doc:id="bd68ff32-6cf2-426b-a6f8-03628211bc0f">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="Insert" doc:id="d4cfa121-b107-4a5e-ad78-f3ed3e264181">
+		<db:insert doc:name="Insert Weather"
+			doc:id="2a46a2fd-c8ca-4e90-a734-436539008a4b"
+			config-ref="Database_Config4">
+			<db:sql>insert into location (location,latitude,longitude,temperature
+				,date,time)
+				values(:loc,:lati,:long,:temp,:dat,:time)</db:sql>
+			<db:input-parameters><![CDATA[#[{
+	'loc':payload.WeatherResponse.Location,
+	'lati':payload.WeatherResponse.Latitude,
+	'long':payload.WeatherResponse.Longitude,
+	'temp':payload.WeatherResponse.Temperature,
+	'dat':payload.WeatherResponse.Date,
+	'time':payload.WeatherResponse.Time
+	
+}]]]></db:input-parameters>
+		</db:insert>
+		<ee:transform doc:name="Transform Message"
+			doc:id="fd0b176e-bba6-48d7-b9c4-c181ed2ff145">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message : "Inserted Successfully "
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="Read" doc:id="0449205a-bf93-4941-a72e-ceab32caa0df" >
+		<db:select doc:name="Select Location" doc:id="2753212f-bb53-44a3-ba31-3bf8c93fb4a4" config-ref="Database_Config4">
+			<db:sql >select * from location where (location=:loc );</db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'loc':payload.WeatherResponse.Location
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="4708e288-e0b9-4f4e-8585-9ec88c09b9b0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="fb3494df-282f-4a62-b94d-a7f4c8c34f9d" >
+				<ee:transform doc:name="Transform Message" doc:id="33374e82-6655-49ec-a6d6-2e9bab1c9c50" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message:"Doesn't Excist in database"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="Default" doc:id="86ce4886-232b-4598-b12b-c2dfb4c38613" >
+		<ee:transform doc:name="Transform Message" doc:id="dd763e49-f73e-469f-8019-aa4f394185e5" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload
+	
+    ]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
